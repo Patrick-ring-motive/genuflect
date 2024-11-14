@@ -1,0 +1,428 @@
+package main
+//package genuflect
+
+import (
+  "reflect"
+  "unsafe"
+)
+
+// Existing code...
+
+func ptr[T any](v T) *T {
+  return &v
+}
+
+type Value[T any] struct {
+  value        *T
+  reflectValue *reflect.Value
+}
+
+type Type[T any] struct {
+  typ         *T
+  reflectType *reflect.Type
+}
+
+type MapIter struct {
+  iter *reflect.MapIter
+}
+
+func ValueOf[T any](value *T) *Value[T] {
+  return &Value[T]{value: value, reflectValue: ptr(reflect.ValueOf(value))}
+}
+
+func (v *Value[T]) ReflectValue() *reflect.Value {
+  return v.reflectValue
+}
+
+func (v *Value[T]) Value() T {
+  return reflect.Indirect(*v.ReflectValue()).Interface().(T)
+}
+
+// Implementations of the requested methods:
+
+func Zero[T any](typ ...*Type[T]) *Value[T] {
+  var rt reflect.Type
+  if len(typ) > 0 {
+    rt = **typ[0].reflectType
+  } else {
+    var t T
+    rt = reflect.TypeOf(t)
+  }
+  rv := reflect.Zero(rt)
+  val := rv.Interface().(T)
+  return &Value[T]{value: &val, reflectValue: &rv}
+}
+
+func (v *Value[T]) Addr() *Value[*T] {
+  rv := v.ReflectValue().Addr()
+  val := rv.Interface().(*T)
+  return &Value[*T]{value: val, reflectValue: &rv}
+}
+
+func (v *Value[T]) Bool() bool {
+  return v.ReflectValue().Bool()
+}
+
+func (v *Value[T]) Bytes() []byte {
+  return v.ReflectValue().Bytes()
+}
+
+func (v *Value[T]) Call(in []*Value[any]) []*Value[any] {
+  inValues := make([]reflect.Value, len(in))
+  for i, val := range in {
+    inValues[i] = *val.ReflectValue()
+  }
+  outValues := v.ReflectValue().Call(inValues)
+  result := make([]*Value[any], len(outValues))
+  for i, rv := range outValues {
+    val := rv.Interface()
+    result[i] = &Value[any]{value: &val, reflectValue: &rv}
+  }
+  return result
+}
+
+func (v *Value[T]) CallSlice(in []*Value[any]) []*Value[any] {
+  inValues := make([]reflect.Value, len(in))
+  for i, val := range in {
+    inValues[i] = *val.ReflectValue()
+  }
+  outValues := v.ReflectValue().CallSlice(inValues)
+  result := make([]*Value[any], len(outValues))
+  for i, rv := range outValues {
+    val := rv.Interface()
+    result[i] = &Value[any]{value: &val, reflectValue: &rv}
+  }
+  return result
+}
+
+func (v *Value[T]) CanAddr() bool {
+  return v.ReflectValue().CanAddr()
+}
+
+func (v *Value[T]) CanComplex() bool {
+  return v.ReflectValue().CanComplex()
+}
+
+func (v *Value[T]) CanConvert(typ *Type[any]) bool {
+  return v.ReflectValue().CanConvert(**typ.reflectType)
+}
+
+func (v *Value[T]) CanFloat() bool {
+  return v.ReflectValue().CanFloat()
+}
+
+func (v *Value[T]) CanInt() bool {
+  return v.ReflectValue().CanInt()
+}
+
+func (v *Value[T]) CanInterface() bool {
+  return v.ReflectValue().CanInterface()
+}
+
+func (v *Value[T]) CanSet() bool {
+  return v.ReflectValue().CanSet()
+}
+
+func (v *Value[T]) CanUint() bool {
+  return v.ReflectValue().CanUint()
+}
+
+func (v *Value[T]) Cap() int {
+  return v.ReflectValue().Cap()
+}
+
+func (v *Value[T]) Clear() {
+  v.ReflectValue().Set(reflect.Zero(v.ReflectValue().Type()))
+}
+
+func (v *Value[T]) Close() {
+  v.ReflectValue().Close()
+}
+
+func (v *Value[T]) Comparable() bool {
+  return v.ReflectValue().Comparable()
+}
+
+func (v *Value[T]) Complex() complex128 {
+  return v.ReflectValue().Complex()
+}
+
+func (v *Value[T]) Convert(typ *Type[any]) *Value[any] {
+  rv := v.ReflectValue().Convert(**typ.reflectType)
+  val := rv.Interface()
+  return &Value[any]{value: &val, reflectValue: &rv}
+}
+
+func (v *Value[T]) Elem() *Value[any] {
+  rv := v.ReflectValue().Elem()
+  val := rv.Interface()
+  return &Value[any]{value: &val, reflectValue: &rv}
+}
+
+func (v *Value[T]) Equal(u *Value[T]) bool {
+  return v.ReflectValue().Equal(*u.ReflectValue())
+}
+
+func (v *Value[T]) Field(i int) *Value[any] {
+  rv := v.ReflectValue().Field(i)
+  val := rv.Interface()
+  return &Value[any]{value: &val, reflectValue: &rv}
+}
+
+func (v *Value[T]) FieldByIndex(index []int) *Value[any] {
+  rv := v.ReflectValue().FieldByIndex(index)
+  val := rv.Interface()
+  return &Value[any]{value: &val, reflectValue: &rv}
+}
+
+func (v *Value[T]) FieldByIndexErr(index []int) (*Value[any], error) {
+  rv, err := v.ReflectValue().FieldByIndexErr(index)
+  if err != nil {
+    return nil, err
+  }
+  val := rv.Interface()
+  return &Value[any]{value: &val, reflectValue: &rv}, nil
+}
+
+func (v *Value[T]) FieldByName(name string) *Value[any] {
+  rv := v.ReflectValue().FieldByName(name)
+  val := rv.Interface()
+  return &Value[any]{value: &val, reflectValue: &rv}
+}
+
+func (v *Value[T]) FieldByNameFunc(match func(string) bool) *Value[any] {
+  rv := v.ReflectValue().FieldByNameFunc(match)
+  val := rv.Interface()
+  return &Value[any]{value: &val, reflectValue: &rv}
+}
+
+func (v *Value[T]) Float() float64 {
+  return v.ReflectValue().Float()
+}
+
+func (v *Value[T]) Grow(n int) {
+  v.ReflectValue().Grow(n)
+}
+
+func (v *Value[T]) Index(i int) *Value[any] {
+  rv := v.ReflectValue().Index(i)
+  val := rv.Interface()
+  return &Value[any]{value: &val, reflectValue: &rv}
+}
+
+func (v *Value[T]) Int() int64 {
+  return v.ReflectValue().Int()
+}
+
+func (v *Value[T]) Interface() any {
+  return v.ReflectValue().Interface()
+}
+
+func (v *Value[T]) IsNil() bool {
+  return v.ReflectValue().IsNil()
+}
+
+func (v *Value[T]) IsValid() bool {
+  return v.ReflectValue().IsValid()
+}
+
+func (v *Value[T]) IsZero() bool {
+  return v.ReflectValue().IsZero()
+}
+
+func (v *Value[T]) Kind() reflect.Kind {
+  return v.ReflectValue().Kind()
+}
+
+func (v *Value[T]) Len() int {
+  return v.ReflectValue().Len()
+}
+
+func (v *Value[T]) MapIndex(key *Value[any]) *Value[any] {
+  rv := v.ReflectValue().MapIndex(*key.ReflectValue())
+  val := rv.Interface()
+  return &Value[any]{value: &val, reflectValue: &rv}
+}
+
+func (v *Value[T]) MapKeys() []*Value[any] {
+  keys := v.ReflectValue().MapKeys()
+  result := make([]*Value[any], len(keys))
+  for i, rv := range keys {
+    val := rv.Interface()
+    result[i] = &Value[any]{value: &val, reflectValue: &rv}
+  }
+  return result
+}
+
+func (v *Value[T]) MapRange() *MapIter {
+  return &MapIter{iter: v.ReflectValue().MapRange()}
+}
+
+func (v *Value[T]) NumField() int {
+  return v.ReflectValue().NumField()
+}
+
+func (v *Value[T]) NumMethod() int {
+  return v.ReflectValue().NumMethod()
+}
+
+func (v *Value[T]) OverflowComplex(x complex128) bool {
+  return v.ReflectValue().OverflowComplex(x)
+}
+
+func (v *Value[T]) OverflowFloat(x float64) bool {
+  return v.ReflectValue().OverflowFloat(x)
+}
+
+func (v *Value[T]) OverflowInt(x int64) bool {
+  return v.ReflectValue().OverflowInt(x)
+}
+
+func (v *Value[T]) OverflowUint(x uint64) bool {
+  return v.ReflectValue().OverflowUint(x)
+}
+
+func (v *Value[T]) Pointer() uintptr {
+  return v.ReflectValue().Pointer()
+}
+
+func (v *Value[T]) Recv() (*Value[any], bool) {
+  rv, ok := v.ReflectValue().Recv()
+  val := rv.Interface()
+  return &Value[any]{value: &val, reflectValue: &rv}, ok
+}
+
+func (v *Value[T]) Send(x *Value[any]) {
+  v.ReflectValue().Send(*x.ReflectValue())
+}
+
+// Assuming iter.Seq[Value] is defined in your package
+/*
+func (v *Value[T]) Seq() iter.Seq[*Value[any]] {
+  // Implementation depends on your iter package
+}
+
+func (v *Value[T]) Seq2() iter.Seq2[*Value[any], *Value[any]] {
+  // Implementation depends on your iter package
+}
+*/
+
+func (v *Value[T]) Set(x *Value[T]) {
+  v.ReflectValue().Set(*x.ReflectValue())
+}
+
+func (v *Value[T]) SetBool(x bool) {
+  v.ReflectValue().SetBool(x)
+}
+
+func (v *Value[T]) SetBytes(x []byte) {
+  v.ReflectValue().SetBytes(x)
+}
+
+func (v *Value[T]) SetCap(n int) {
+  v.ReflectValue().SetCap(n)
+}
+
+func (v *Value[T]) SetComplex(x complex128) {
+  v.ReflectValue().SetComplex(x)
+}
+
+func (v *Value[T]) SetFloat(x float64) {
+  v.ReflectValue().SetFloat(x)
+}
+
+func (v *Value[T]) SetInt(x int64) {
+  v.ReflectValue().SetInt(x)
+}
+
+func (v *Value[T]) SetIterKey(iter *MapIter) {
+  v.ReflectValue().SetIterKey(iter.iter)
+}
+
+func (v *Value[T]) SetIterValue(iter *MapIter) {
+  v.ReflectValue().SetIterValue(iter.iter)
+}
+
+func (v *Value[T]) SetLen(n int) {
+  v.ReflectValue().SetLen(n)
+}
+
+func (v *Value[T]) SetMapIndex(key, elem *Value[any]) {
+  v.ReflectValue().SetMapIndex(*key.ReflectValue(), *elem.ReflectValue())
+}
+
+func (v *Value[T]) SetPointer(x unsafe.Pointer) {
+  v.ReflectValue().SetPointer(x)
+}
+
+func (v *Value[T]) SetString(x string) {
+  v.ReflectValue().SetString(x)
+}
+
+func (v *Value[T]) SetUint(x uint64) {
+  v.ReflectValue().SetUint(x)
+}
+
+func (v *Value[T]) SetZero() {
+  v.ReflectValue().Set(reflect.Zero(v.ReflectValue().Type()))
+}
+
+func (v *Value[T]) Slice(i, j int) *Value[any] {
+  rv := v.ReflectValue().Slice(i, j)
+  val := rv.Interface()
+  return &Value[any]{value: &val, reflectValue: &rv}
+}
+
+func (v *Value[T]) Slice3(i, j, k int) *Value[any] {
+  rv := v.ReflectValue().Slice3(i, j, k)
+  val := rv.Interface()
+  return &Value[any]{value: &val, reflectValue: &rv}
+}
+
+func (v *Value[T]) String() string {
+  return v.ReflectValue().String()
+}
+
+func (v *Value[T]) TryRecv() (*Value[any], bool) {
+  rv, ok := v.ReflectValue().TryRecv()
+  val := rv.Interface()
+  return &Value[any]{value: &val, reflectValue: &rv}, ok
+}
+
+func (v *Value[T]) TrySend(x *Value[any]) bool {
+  return v.ReflectValue().TrySend(*x.ReflectValue())
+}
+
+func (v *Value[T]) Type() *Type[T] {
+  rt := v.ReflectValue().Type()
+  return &Type[T]{typ: v.value, reflectType: &rt}
+}
+
+func (v *Value[T]) Uint() uint64 {
+  return v.ReflectValue().Uint()
+}
+
+func (v *Value[T]) UnsafeAddr() uintptr {
+  return v.ReflectValue().UnsafeAddr()
+}
+
+func (v *Value[T]) UnsafePointer() unsafe.Pointer {
+  return v.ReflectValue().UnsafePointer()
+}
+
+// Additional code to support MapIter
+func (iter *MapIter) Key() *Value[any] {
+  rv := iter.iter.Key()
+  val := rv.Interface()
+  return &Value[any]{value: &val, reflectValue: &rv}
+}
+
+func (iter *MapIter) Value() *Value[any] {
+  rv := iter.iter.Value()
+  val := rv.Interface()
+  return &Value[any]{value: &val, reflectValue: &rv}
+}
+
+func (iter *MapIter) Next() bool {
+  return iter.iter.Next()
+}
